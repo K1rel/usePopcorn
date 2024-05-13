@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
 
 const average = (arr) =>
@@ -7,6 +7,21 @@ const average = (arr) =>
 const key = "d914faa6"; //http://www.omdbapi.com/?apikey=[d914faa6]&
 
 function Search({ query, setQuery }) {
+  const inputElement = useRef(null);
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (document.activeElement === inputElement.current) return;
+        if (e.code === "Enter") inputElement.current.focus();
+        setQuery("");
+      }
+
+      document.addEventListener("keydown", callback);
+      return () => document.addEventListener("keydown", callback);
+    },
+    [setQuery]
+  );
   return (
     <input
       className="search"
@@ -14,6 +29,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputElement}
     />
   );
 }
@@ -187,6 +203,7 @@ function SelectedMovie({
   const [movie, setMovie] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+  const countRef = useRef(0);
   const isWatched = !watched.filter((i) => i.imdbID === selectedId).length;
   const watchedUserRating = watched.find(
     (i) => i.imdbID === selectedId
@@ -212,6 +229,7 @@ function SelectedMovie({
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRatingDecisions: countRef.current,
     };
     if (isWatched) {
       onAddWatched(newMovie);
@@ -219,6 +237,12 @@ function SelectedMovie({
 
     onHandleCloseSelected();
   }
+  useEffect(
+    function () {
+      if (userRating) countRef.current = countRef.current + 1;
+    },
+    [userRating]
+  );
   useEffect(
     function () {
       function eventot(e) {
